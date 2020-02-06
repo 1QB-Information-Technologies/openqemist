@@ -21,15 +21,14 @@ services:
         - "8888:8888"
     volumes:
         - ../:/root/openqemist
-    command: bash -c "while true; do sleep 1; done"
+    working_dir: /root/openqemist/examples
+    command: jupyter notebook --no-browser --allow-root --ip=0.0.0.0
     container_name: qemist_test_container
 
   rigetti_qvm:
     image: rigetti/qvm
-    # We have to override the default start mode of the QVM
-    entrypoint: ./qvm -S
+    command: -S
 
   rigetti_quilc:
     image: rigetti/quilc
-    # We have to override the default start mode of the QVM
-    entrypoint: ./quilc -S
+    command: -S

@@ -19,4 +19,5 @@ Then run the Jypiter notebook with
 ```bash
 $jupyter notebook --no-browser --allow-root --ip=0.0.0.0
 ```
-
+## Rigetti configuration
+Using the docker-compose file configures the environment to use the Rigetti

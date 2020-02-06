@@ -16,7 +16,7 @@ help:
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
-	@sphinx-apidoc  -o refman/ .. ../setup.py ../qemist/tests/ ../benchmarks
+	@sphinx-apidoc  -o refman/ .. ../setup.py ../openqemist/tests/ ../benchmarks
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 multisolver_notebook:
@@ -31,9 +31,9 @@ vqe_notebook:
 	@jupyter nbconvert --ExecutePreprocessor.timeout=6000 --execute --to rst ../examples/vqe_microsoft_qsharp.ipynb
 	@mv ../examples/vqe_microsoft_qsharp.rst .
 
-qiskit_notebook:
-	@jupyter nbconvert --ExecutePreprocessor.timeout=6000 --execute --to rst ../examples/qiskit_example.ipynb
-	@mv ../examples/qiskit_example.rst .
+rigetti_notebook:
+	@jupyter nbconvert --ExecutePreprocessor.timeout=6000 --execute --to rst ../examples/rigetti_example.ipynb
+	@mv ../examples/rigetti_example.rst .
 
 notebooks: multisolver_notebook dmet_notebook vqe_notebook qiskit_notebook
 

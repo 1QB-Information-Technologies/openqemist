@@ -26,7 +26,12 @@ consult our main [product page](https://1qbit.com/qemist).
 To get started, install the package, then see the [Jupyter notebooks](https://github.com/1QB-Information-Technologies/openqemist/tree/master/examples)
 for example usage.
 
-To use the Microsoft QDK integration follow the [instructions here](https://docs.microsoft.com/en-us/quantum/install-guide/?view=qsharp-preview).
+To use the Rigetti integration, see the [instructions here](http://docs.rigetti.com/en/stable/start.html)
+to install and configure the QVM and Quilc compiler. Alternatively, use the
+provided docker-compose file to set up the environment.
+
+To use the Microsoft QDK integration follow the [instructions here](https://docs.microsoft.com/en-us/quantum/install-guide/?view=qsharp-preview)
+to install the required dependencies.
 
 ## Architechture of OpenQEMIST
 OpenQEMIST is organized into three layers: problem decomposition, electronic
