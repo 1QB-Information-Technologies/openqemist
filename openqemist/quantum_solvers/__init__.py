@@ -14,3 +14,4 @@
 
 from .qiskit.qiskit_parametric_solver import QiskitParametricSolver
 from .microsoft_qsharp.microsoft_qsharp_parametric_solver import MicrosoftQSharpParametricSolver
+from .rigetti.rigetti_parametric_solver import RigettiParametricSolver

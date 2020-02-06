@@ -28,3 +28,6 @@ Release Notes
 - `ParametricQuantumSolver` objects constructors now take an optional dictionary
   mapping strings to values. This can be passed from the VQE caller to further
   configure the hardware backend.
+
+- Added `RigettiParametricSolver` to provide an integration with the Rigetti
+  stack.
