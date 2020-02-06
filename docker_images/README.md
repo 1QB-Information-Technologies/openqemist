@@ -1,6 +1,8 @@
 # OpenQEMIST Docker image
 This is a fully configured Docker image for running OpenQEMIST, and building the
-documentation.
+documentation. OpenQEMIST can run in a container built from the included
+Dockerfile. A docker-compose file is also provided to configure the Rigetti
+quilc and qvm images.
 
 ## Getting started
 On some platforms, limiting the number of threads that OpenMP uses to the number
@@ -17,4 +19,5 @@ Then run the Jypiter notebook with
 ```bash
 $jupyter notebook --no-browser --allow-root --ip=0.0.0.0
 ```
-
+## Rigetti configuration
+Using the docker-compose file configures the environment to use the Rigetti

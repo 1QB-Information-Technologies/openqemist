@@ -46,7 +46,7 @@ class DMETProblemDecomposition(ProblemDecomposition):
         self.electronic_structure_solver = CCSDSolver()
         self.electron_localization_method = iao_localization
 
-    def simulate(self, molecule, fragment_atoms, mean_field = None):
+    def simulate(self, molecule, fragment_atoms, mean_field = None, fragment_solvers = None):
         """Perform DMET single-shot calculation.
 
         If the mean field is not provided it is automatically calculated.
@@ -55,17 +55,29 @@ class DMETProblemDecomposition(ProblemDecomposition):
             molecule (pyscf.gto.Mole): The molecule to simulate.
             fragment_atoms (list): List of number of atoms for each fragment (int).
             mean_field (pyscf.scf.RHF): The mean field of the molecule.
+            fragment_solvers (list): List of ElectronicStructureSolvers with
+                which to solve each fragment. If None is passed here, the solver
+                that is provided for the `electronic_structure_solver` attribute
+                is used.
 
         Return:
             float64: The DMET energy (dmet_energy).
 
         Raise:
-            RuntimeError: If the number of atoms in the fragment list agrees with total.
+            RuntimeError: If the sum of the atoms in the fragments is different
+                from the number of atoms in the molecule.
+            RuntimeError: If the number fragments is different from the number
+                of solvers.
         """
 
         # Check if the number of fragment sites is equal to the number of atoms in the molecule
         if molecule.natm != sum(fragment_atoms):
-            raise RuntimeError("the number of fragment sites is not equal to the number of atoms in the molecule")
+            raise RuntimeError("The number of fragment sites is not equal to the number of atoms in the molecule")
+
+        # Check that the number of solvers matches the number of fragments.
+        if fragment_solvers:
+            if len(fragment_solvers) != len(fragment_atoms):
+                raise RuntimeError("The number of solvers does not match the number of fragments.")
 
         # Calculate the mean field if the user has not already done it.
         if not mean_field:
@@ -88,7 +100,7 @@ class DMETProblemDecomposition(ProblemDecomposition):
         # Initialize the energy list and SCF procedure employing newton-raphson algorithm
         energy = []
         chemical_potential = 0.0
-        chemical_potential = scipy.optimize.newton(self._oneshot_loop, chemical_potential, args = (orbitals, orb_list, orb_list2, energy), tol=1e-5)
+        chemical_potential = scipy.optimize.newton(self._oneshot_loop, chemical_potential, args = (orbitals, orb_list, orb_list2, energy, fragment_solvers), tol=1e-5)
 
         # Get the final energy value
         niter = len(energy)
@@ -101,7 +113,7 @@ class DMETProblemDecomposition(ProblemDecomposition):
 
         return dmet_energy
 
-    def _oneshot_loop(self, chemical_potential, orbitals, orb_list, orb_list2, energy_list):
+    def _oneshot_loop(self, chemical_potential, orbitals, orb_list, orb_list2, energy_list, solvers=None):
         """Perform the DMET loop.
 
         This is the function which runs in the minimizer.
@@ -114,6 +126,8 @@ class DMETProblemDecomposition(ProblemDecomposition):
             orb_list (list): The number of orbitals for each fragment (int).
             orb_list2 (list): List of lists of the minimum and maximum orbital label for each fragment (int).
             energy_list (list): List of DMET energy for each iteration (float64).
+            solvers (list): List of ElectronicStructureSolvers used to solve
+                each fragment.
 
         Returns:
             float64: The new chemical potential.
@@ -156,10 +170,16 @@ class DMETProblemDecomposition(ProblemDecomposition):
             # Carry out SCF calculation for a fragment
             mf_fragment, fock_frag_copy, mol_frag = helpers._fragment_scf(t_list, two_ele, fock, nelec_high, norb_high, guess_orbitals, chemical_potential)
 
-            # Solve the electronic structure
-            energy = self.electronic_structure_solver.simulate(mol_frag, mf_fragment)
-            # Calculate the RDMs
-            cc_onerdm, cc_twordm = self.electronic_structure_solver.get_rdm()
+            # Solve the electronic structure and calculate the RDMs
+            energy = None
+            cc_onerdm = None
+            cc_twordm = None
+            if solvers:
+                energy = (solvers[i]).simulate(mol_frag, mf_fragment)
+                cc_onerdm, cc_twordm = (solvers[i]).get_rdm()
+            else:
+                energy = self.electronic_structure_solver.simulate(mol_frag, mf_fragment)
+                cc_onerdm, cc_twordm = self.electronic_structure_solver.get_rdm()
 
             # Compute the fragment energy
             fragment_energy, total_energy_rdm, one_rdm = self._compute_energy(mf_fragment, cc_onerdm, cc_twordm, fock_frag_copy, t_list, one_ele, two_ele, fock)

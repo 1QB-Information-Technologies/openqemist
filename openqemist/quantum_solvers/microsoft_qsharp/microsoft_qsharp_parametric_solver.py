@@ -1,5 +1,5 @@
 #   Copyright 2019 1QBit
-#   
+#
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -17,19 +17,16 @@ from enum import Enum
 from ..parametric_quantum_solver import ParametricQuantumSolver
 
 import os
-import numpy as np
+import tempfile
+import warnings
 
-# Import python packages for Microsoft Python interops
-import qsharp
-import qsharp.chemistry as qsharpchem
-# Import the "EstimateEnergy" Q# operation from the QDK Chemistry library
-estimate_energy = qsharp.QSharpCallable("Microsoft.Quantum.Chemistry.JordanWigner.VQE.EstimateEnergy", "")
+import numpy as np
 
 # Import pyscf and functions making use of it
 from pyscf import gto, scf
 from .integrals_pyscf import compute_integrals_fragment
 from .generate_uccsd_operators import count_amplitudes, compute_cluster_operator
-
+from .broombridge_dummy import _dummy_0_2_yaml
 
 class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
     """Performs an energy estimation for a molecule with a parametric circuit.
@@ -47,7 +44,7 @@ class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
         """ Enumeration of the ansatz circuits that are supported."""
         UCCSD = 0
 
-    def __init__(self, ansatz, molecule, mean_field = None):
+    def __init__(self, ansatz, molecule, mean_field=None, backend_options=None):
         """Initialize the settings for simulation.
 
         If the mean field is not provided it is automatically calculated.
@@ -56,8 +53,16 @@ class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
             ansatz (OpenFermionParametricSolver.Ansatze): Ansatz for the quantum solver.
             molecule (pyscf.gto.Mole): The molecule to simulate.
             mean_field (pyscf.scf.RHF): The mean field of the molecule.
+            backend_options (dict): Extra parameters that control the behaviour
+                of the solver.
         """
+        # Import python packages for Microsoft Python interops
+        import qsharp
+        import qsharp.chemistry as qsharpchem
+
         assert(isinstance(ansatz, MicrosoftQSharpParametricSolver.Ansatze))
+        self.ansatz = ansatz
+
         self.verbose = False
 
         # Initialize the number of samples to be used by the MicrosoftQSharp backend
@@ -75,9 +80,19 @@ class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
             mean_field.verbose = 0
             mean_field.scf()
 
+            if (mean_field.converged == False):
+                orb_temp = mean_field.mo_coeff
+                occ_temp = mean_field.mo_occ
+                nr = scf.newton(mean_field)
+                energy = nr.kernel(orb_temp, occ_temp)
+                mean_field = nr
+
         if not mean_field.converged:
             warnings.warn("MicrosoftQSharpParametricSolver simulating with mean field not converged.",
                     RuntimeWarning)
+
+        self.molecule = molecule
+        self.mean_field = mean_field
 
         self.n_orbitals = len(mean_field.mo_energy)
         self.n_spin_orbitals = 2 * self.n_orbitals
@@ -88,60 +103,68 @@ class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
         # ----------------------------------------------
 
         # Get data-structure to store problem description
-        __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-        filename = os.path.join(__location__, 'dummy_0.2.yaml')
-        molecular_data = qsharpchem.load_broombridge(filename)
+        fd, path = tempfile.mkstemp(suffix='.yaml')
+        try:
+            # Write the dummp_0.2.yaml file to a temporary file
+            with os.fdopen(fd, 'w') as tmp:
+                tmp.write(_dummy_0_2_yaml)
 
-        # Compute one and two-electron integrals, store them in the Microsoft data-structure
-        integrals_one, integrals_two = compute_integrals_fragment(molecule, mean_field)
-        molecular_data.problem_description[0].hamiltonian['OneElectronIntegrals']['Values'] = integrals_one
-        molecular_data.problem_description[0].hamiltonian['TwoElectronIntegrals']['Values'] = integrals_two
-        molecular_data.problem_description[0].coulomb_repulsion['Value'] = nuclear_repulsion
+            molecular_data = qsharpchem.load_broombridge(path)
 
-        # Compute and set values of UCCSD operators
-        # -----------------------------------------
+            # Compute one and two-electron integrals, store them in the Microsoft data-structure
+            integrals_one, integrals_two = compute_integrals_fragment(molecule, mean_field)
+            molecular_data.problem_description[0].hamiltonian['OneElectronIntegrals']['Values'] = integrals_one
+            molecular_data.problem_description[0].hamiltonian['TwoElectronIntegrals']['Values'] = integrals_two
+            molecular_data.problem_description[0].coulomb_repulsion['Value'] = nuclear_repulsion
 
-        # Generate UCCSD one- and two-body operators
-        n_amplitudes = count_amplitudes(self.n_spin_orbitals, self.n_electrons)
-        self.amplitude_dimension = n_amplitudes
-        amplitudes = np.ones((n_amplitudes), dtype=np.float64)
-        ref,t = compute_cluster_operator(self.n_spin_orbitals, self.n_electrons, amplitudes)
+            # Compute and set values of UCCSD operators
+            # -----------------------------------------
 
-        # Load a dummy inputstate object from the dummy Broombridge file, and set its values
-        self.inputstate = qsharpchem.load_input_state(filename, "UCCSD |G>")
+            # Generate UCCSD one- and two-body operators
+            n_amplitudes = count_amplitudes(self.n_spin_orbitals, self.n_electrons)
+            self.amplitude_dimension = n_amplitudes
+            amplitudes = 0.01 * np.ones((n_amplitudes), dtype=np.float64)
+            self.preferred_var_params = amplitudes
+            ref,t = compute_cluster_operator(self.n_spin_orbitals, self.n_electrons, amplitudes)
 
-        if self.verbose:
-            print("inputstate energy :\n", self.inputstate.Energy)
-            print("inputstate mcfdata :\n", self.inputstate.MCFData)
-            print("inputstate method :\n", self.inputstate.Method)
-            print("inputstate scfdata :\n", self.inputstate.SCFData)
-            print("inputstate uccdata :\n", self.inputstate.UCCData, "\n\n\n")
+            # Load a dummy inputstate object from the dummy Broombridge file, and set its values
+            self.inputstate = qsharpchem.load_input_state(path, "UCCSD |G>")
 
-        self.inputstate.UCCData['Reference'] = ref
-        self.inputstate.UCCData['Excitations'] = t
+            if self.verbose:
+                print("inputstate energy :\n", self.inputstate.Energy)
+                print("inputstate mcfdata :\n", self.inputstate.MCFData)
+                print("inputstate method :\n", self.inputstate.Method)
+                print("inputstate scfdata :\n", self.inputstate.SCFData)
+                print("inputstate uccdata :\n", self.inputstate.UCCData, "\n\n\n")
 
-        if self.verbose:
-            print("inputstate :\n", self.inputstate.UCCData)
-            print("------------\n")
+            self.inputstate.UCCData['Reference'] = ref
+            self.inputstate.UCCData['Excitations'] = t
 
-        # Generate Fermionic and then qubit Hamiltonians
-        # ----------------------------------------------
+            if self.verbose:
+                print("inputstate :\n", self.inputstate.UCCData)
+                print("------------\n")
 
-        # C# Chemistry library : Compute fermionic Hamiltonian
-        self.ferm_hamiltonian = molecular_data.problem_description[0].load_fermion_hamiltonian()
-        if self.verbose:
-            print("ferm_hamiltonian:\n", self.ferm_hamiltonian.terms)
-            print("------------\n")
+            # Generate Fermionic and then qubit Hamiltonians
+            # ----------------------------------------------
 
-        # C# Chemistry library : Compute the Pauli Hamiltonian using the Jordan-Wigner transform
-        self.jw_hamiltonian = qsharpchem.encode(self.ferm_hamiltonian, self.inputstate)
-        if self.verbose:
-            print("jw_hamiltonian ::", self.jw_hamiltonian)
-            print("------------\n")
+            # C# Chemistry library : Compute fermionic Hamiltonian
+            self.ferm_hamiltonian = molecular_data.problem_description[0].load_fermion_hamiltonian()
+            if self.verbose:
+                print("ferm_hamiltonian:\n", self.ferm_hamiltonian.terms)
+                print("------------\n")
 
-        # Retrieve energy offset and number of qubits
-        self.n_qubits = self.jw_hamiltonian[0]
-        self.energy_offset = self.jw_hamiltonian[3]
+            # C# Chemistry library : Compute the Pauli Hamiltonian using the Jordan-Wigner transform
+            self.jw_hamiltonian = qsharpchem.encode(self.ferm_hamiltonian, self.inputstate)
+            if self.verbose:
+                print("jw_hamiltonian ::", self.jw_hamiltonian)
+                print("------------\n")
+
+            # Retrieve energy offset and number of qubits
+            self.n_qubits = self.jw_hamiltonian[0]
+            self.energy_offset = self.jw_hamiltonian[3]
+        finally:
+            # Cleanup the temp file
+            os.remove(path)
 
 
     def simulate(self, amplitudes):
@@ -155,12 +178,16 @@ class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
         Returns:
             float64: The total energy (energy).
         """
+        import qsharp
+        import qsharp.chemistry as qsharpchem
+        # Import the "EstimateEnergy" Q# operation from the QDK Chemistry library
+        estimate_energy = qsharp.QSharpCallable("Microsoft.Quantum.Chemistry.JordanWigner.VQE.EstimateEnergy", "")
+
         # Test if right number of amplitudes have been passed
         if len(amplitudes) != self.amplitude_dimension:
             raise ValueError("Incorrect dimension for amplitude list.")
 
         amplitudes = list(amplitudes)
-
         self.jw_hamiltonian = self._set_amplitudes(amplitudes, self.jw_hamiltonian)
 
         # Compute energy
@@ -187,6 +214,8 @@ class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
         Returns:
             (numpy.array, numpy.array): One & two-particle RDMs (rdm1_np & rdm2_np, float64).
         """
+        import qsharp
+        import qsharp.chemistry as qsharpchem
 
         amplitudes = self.optimized_amplitudes
         one_rdm = np.zeros((self.n_orbitals, self.n_orbitals))
@@ -256,6 +285,20 @@ class MicrosoftQSharpParametricSolver(ParametricQuantumSolver):
 
         return (one_rdm, two_rdm)
 
+    def default_initial_var_parameters(self):
+        """ Returns initial variational parameters for a VQE simulation.
+
+        Returns initial variational parameters for the circuit that is generated
+        for a given ansatz.
+
+        Returns:
+            list: Initial parameters.
+        """
+        if self.ansatz == self.__class__.Ansatze.UCCSD:
+            from .._variational_parameters import mp2_variational_parameters
+            return mp2_variational_parameters(self.molecule, self.mean_field)
+        else:
+            raise RuntimeError("Unsupported ansatz for automatic parameter generation")
 
     def _set_amplitudes(self, amplitudes, jw_hamiltonian):
         """ Update variational parameters stored in the Q# JW data-structure """

@@ -20,10 +20,10 @@ to prepare the initial T2 amplitudes is done here.
 
 """
 
-def mp2_initial_amplitudes(molecule, mean_field):
-    """ Computes and prepares the MP2 inital amplitudes.
+def mp2_variational_parameters(molecule, mean_field):
+    """ Computes and prepares the MP2 inital variational paramerters.
 
-    Compute the inital amplitudes with PySCF MP2 calculation,
+    Compute the inital variational parameters with PySCF MP2 calculation,
     and then reorders the elements into the QEMIST convention.
 
     MP2 only has doubles (T2) amplitudes, thus the single (T1) amplitudes
@@ -36,7 +36,12 @@ def mp2_initial_amplitudes(molecule, mean_field):
         mean_field (pyscf.scf.RHF): The mean field of the molecule.
 
     Returns:
-        list: The initial amplitudes (float64).
+        list: The initial variational parameters (float64).
+
+    Note:
+        This is only provided as a convenience function. Users are responsible
+        for ensuring that the parameters returned are appropriate and of correct
+        dimenstion.
     """
     from pyscf import mp
     import numpy as np

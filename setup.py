@@ -14,7 +14,7 @@
 
 import setuptools
 
-with open("README.md", "r") as readme:
+with open("docs/pypi_readme.md", "r") as readme:
     long_description = readme.read() # heh
 
 # This requires the a line of the module init to be something like:
@@ -38,7 +38,8 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/1QB-Information-Technologies/openqemist",
     packages=setuptools.find_packages(),
-    install_requires=['pyscf==1.6', 'numpy', 'scipy', 'qsharp'],
+    install_requires=['pyscf==1.6', 'numpy', 'scipy', 'qsharp', 'qiskit==0.13',
+        'pyquil', 'forestopenfermion'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",

@@ -1,3 +1,4 @@
+_dummy_0_2_yaml = """
 
 "$schema": https://raw.githubusercontent.com/Microsoft/Quantum/master/Chemistry/Schema/broombridge-0.2.schema.json
 
@@ -43,3 +44,5 @@ problem_description:
   n_orbitals: 0
   scf_energy: {units: hartree, value: 0.0}
   scf_energy_offset: {units: hartree, value: 0.0}
+
+"""

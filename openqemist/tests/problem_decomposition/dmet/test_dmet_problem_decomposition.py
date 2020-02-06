@@ -42,6 +42,35 @@ H4_RING = """
 
 class DMETProblemDecompositionTest(unittest.TestCase):
 
+    def test_incorrect_number_atoms(self):
+        """Tests if the program raises the error when the number of
+        fragment sites is not equal to the number of atoms in the molecule."""
+        mol = gto.Mole()
+        mol.atom = H10_RING
+        mol.basis = "3-21g"
+        mol.charge = 0
+        mol.spin = 0
+        mol.build()
+
+        solver = DMETProblemDecomposition()
+        solver.electron_localization_method = meta_lowdin_localization
+        solver.electronic_structure_solver = FCISolver()
+        # The molecule has more atoms than this.
+        self.assertRaises(RuntimeError, solver.simulate, mol, [1,1,1,1])
+
+    def test_incorrect_number_solvers(self):
+        """Tests if the program raises the error when the number of
+        fragment sites is not equal to the number of solvers."""
+        mol = gto.Mole()
+        mol.atom = H10_RING
+        mol.basis = "3-21g"
+        mol.charge = 0
+        mol.spin = 0
+        mol.build()
+
+        solver = DMETProblemDecomposition()
+        self.assertRaises(RuntimeError, solver.simulate, mol, [2,3,2,3], fragment_solvers = [FCISolver()])
+
     def test_h10ring_ml_fci_no_mf(self):
         """ Tests the result from DMET against a value from a reference
         implementation with meta-lowdin localization and FCI solution to
@@ -113,6 +142,27 @@ class DMETProblemDecompositionTest(unittest.TestCase):
         energy = solver.simulate(mol, [1,1,1,1])
 
         self.assertAlmostEqual(energy, -1.9916120594, places=4)
+
+
+    def test_solver_mix(self):
+        """Tests that solving with multiple solvers works.
+
+        With this simple system, we can assume that both CCSD and FCI can reach
+        chemical accuracy."""
+        mol = gto.Mole()
+        mol.atom = H4_RING
+        mol.basis = "3-21g"
+        mol.charge = 0
+        mol.spin = 0
+        mol.build()
+
+        solver = DMETProblemDecomposition()
+        solver.electron_localization_method = iao_localization
+        fci = FCISolver()
+        ccsd = CCSDSolver()
+        energy = solver.simulate(mol, [1,1,1,1], fragment_solvers=[fci, fci, ccsd, ccsd])
+
+        self.assertAlmostEqual(energy, -2.0284, places=4)
 
 if __name__ == "__main__":
     unittest.main()

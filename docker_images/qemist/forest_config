@@ -1,0 +1,4 @@
+[Rigetti Forest]
+qpu_endpoint_address = None
+qvm_address = http://rigetti_qvm:5000
+quilc_address = tcp://rigetti_quilc:5555

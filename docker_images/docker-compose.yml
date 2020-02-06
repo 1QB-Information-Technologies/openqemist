@@ -12,6 +12,23 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from .qiskit.qiskit_parametric_solver import QiskitParametricSolver
-from .microsoft_qsharp.microsoft_qsharp_parametric_solver import MicrosoftQSharpParametricSolver
-from .rigetti.rigetti_parametric_solver import RigettiParametricSolver
+version: '3'
+
+services:
+  qemist:
+    build: ./qemist/
+    ports:
+        - "8888:8888"
+    volumes:
+        - ../:/root/openqemist
+    working_dir: /root/openqemist/examples
+    command: jupyter notebook --no-browser --allow-root --ip=0.0.0.0
+    container_name: qemist_test_container
+
+  rigetti_qvm:
+    image: rigetti/qvm
+    command: -S
+
+  rigetti_quilc:
+    image: rigetti/quilc
+    command: -S

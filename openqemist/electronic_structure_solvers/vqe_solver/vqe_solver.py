@@ -1,5 +1,5 @@
 #   Copyright 2019 1QBit
-#   
+#
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -29,8 +29,6 @@ import itertools
 import numpy as np
 from pyscf import scf
 
-from openqemist.quantum_solvers.initial_parameters import mp2_initial_amplitudes
-
 from ..electronic_structure_solver import ElectronicStructureSolver
 
 class VQESolver(ElectronicStructureSolver):
@@ -57,15 +55,16 @@ class VQESolver(ElectronicStructureSolver):
         ansatz_type (subclass of Enum): Type of ansatz that is supported by the
             backend.
         optimizer (function): Function that is called to optimize.
-        initial_amplitude_function (function): Function that returns the initial
-            amplitudes used for the optimization.
-        initial_amplitudes (list): The initial amplitudes for the optimzation.
+        initial_var_params (list): Initial values of the variational parameters
+            used in the classical optimization process
         verbose (boolean): Controls the verbosity of the default optimizer.
+        backend_parameters (dict): Extra parameters that can be forwarded to the
+            parametric quantum solver.
     Note:
-        Initial amplitudes can be specified both through the functional
-        parameter `initial_amplitude_function` and through the
-        `initial_amplitudes`. If both are specified the `initial_amplitudes` are
-        used.
+        Initial variational parameters can be specified through the
+        `initial_var_params` argument. If this is not specified, then the
+        `default_initial_var_parameters` function provided by the hardware
+        backend is used.
     """
 
     def __init__(self):
@@ -74,8 +73,9 @@ class VQESolver(ElectronicStructureSolver):
         self.hardware_backend = None
         self.ansatz_type = None
         self.optimizer = None
-        self.initial_amplitude_function = mp2_initial_amplitudes
-        self.initial_amplitudes = None
+        self.initial_var_params = None
+        self.backend_parameters = {}
+
 
     def simulate(self, molecule, mean_field=None):
         """Perform the simulation for the molecule.
@@ -92,30 +92,40 @@ class VQESolver(ElectronicStructureSolver):
             mean_field.verbose = 0
             mean_field.scf()
 
+            if (mean_field.converged == False):
+                orb_temp = mean_field.mo_coeff
+                occ_temp = mean_field.mo_occ
+                nr = scf.newton(mean_field)
+                energy = nr.kernel(orb_temp, occ_temp)
+                mean_field = nr
+
         # Check the convergence of the mean field
         if not mean_field.converged:
             warnings.warn("VQESolver simulating with mean field not converged.",
                     RuntimeWarning)
 
-        # Set up the instance of the hardware backend
+        # Instantiate the quantum solver backend
+        # It knows what ansatz has been picked and computed preferred values for its parameters
         self.hardware_backend = self.hardware_backend_type(self.ansatz_type,
-                molecule, mean_field)
+                molecule, mean_field, self.backend_parameters)
 
-        # If no set of initial amplitudes was provided, set them as MP2 amplitudes
-        if self.initial_amplitudes:
-            amplitudes = self.initial_amplitudes
-        else:
-            amplitudes = self.initial_amplitude_function(molecule, mean_field)
+        # The user can provide their own initial variational parameters, otherwise the preferred ones
+        # computed by the underlying quantum solver will be used as initial values
+        # An incorrect number of variational parameters passed by the user will result
+        # in a runtime error in hardware_backend.simulate
+        var_params = self.initial_var_params if self.initial_var_params \
+            else self.hardware_backend.default_initial_var_parameters()
+
         if self.verbose:
-            print("VQE : initial amplitudes\n", amplitudes, "\n\n")
+            print("VQE : initial variational parameters: \n", var_params, "\n")
 
-        # If the user didn't provide an optimizer, then we give them scipy's
+        # If the user didn't provide an optimizer, then we give them a default one from scipy
         if not self.optimizer:
             self.optimizer = self._default_optimizer
 
-        # Call the optimizer until it converges
-        energy = self.optimizer(self.hardware_backend.simulate, amplitudes)
-
+        # Run VQE algorithm
+        # TODO: should return the optimal parameters as well
+        energy = self.optimizer(self.hardware_backend.simulate, var_params)
         return energy
 
     def get_rdm(self):
@@ -152,8 +162,8 @@ class VQESolver(ElectronicStructureSolver):
 
         from scipy.optimize import minimize
 
-        result = minimize(backend, amplitudes, method='COBYLA',
-                options={'disp':True, 'maxiter':2000, 'rhobeg':0.01, 'tol':1e-5})
+        result = minimize(backend, amplitudes, method='SLSQP',
+                options={'disp':True, 'maxiter':2000, 'eps':1e-5, 'ftol':1e-5})
 
         if self.verbose:
             print("\n\t\tOptimal UCCSD Singlet Energy: {}".format(result.fun))

@@ -1,5 +1,5 @@
 #   Copyright 2019 1QBit
-#   
+#
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -14,11 +14,11 @@
 
 """Perform IAO localization.
 
-The orbital localization of the canonical orbitals 
+The orbital localization of the canonical orbitals
 using Intrinsic Atomic Orbitals (IAO) localization is done here.
 `pyscf.lo` is used.
 
-Note that minimal basis cannot be used for IAO because 
+Note that minimal basis cannot be used for IAO because
 the idea of IAO is to map on minao minimal basis set.
 
 For details, refer to:
@@ -43,6 +43,9 @@ def iao_localization(mol, mf):
     Returns:
         numpy.array: The localized orbitals (float64).
     """
+
+    if mol.basis == "minao":
+        raise RuntimeError("Using IAO localization with minao basis is not supported.")
 
     #   Construct IAO from occupied orbitals
     iao1 = _iao_occupied_orbitals(mol, mf)
@@ -171,16 +174,9 @@ def _iao_count_active(mol, min_mol):
     active_number_list = []
 
     #   Loop over all basis and see if there are labels matching with the MINAO ones
-    itemp = 0
-    for total_basis in mol.spheric_labels():
-        count_yes = 0
-        for min_basis in min_mol.spheric_labels():
-            if min_basis == total_basis:
-                count_yes = 1
-        if count_yes == 0:
-            active_number_list.append(itemp)
-
-        itemp += 1
+    for idx, total_basis in enumerate(mol.spheric_labels()):
+        if all([min_basis != total_basis for min_basis in min_mol.spheric_labels()]):
+            active_number_list.append(idx)
 
     #   Make the list a numpy array
     number_active = len(active_number_list)

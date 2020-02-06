@@ -1,7 +1,7 @@
 ![logo](http://1qbit.com/wp-content/uploads/2019/05/1qbitlogo.png "1QBit is awesome!")
 
 # OpenQEMIST
-[![Build Status](https://travis-ci.com/1QB-Information-Technologies/openqemist.svg?token=zt4rNJ8MTUGcpVsToGyy&branch=0.2-staging)](https://travis-ci.com/1QB-Information-Technologies/openqemist)
+[![Build Status](https://travis-ci.com/1QB-Information-Technologies/openqemist.svg?token=zt4rNJ8MTUGcpVsToGyy&branch=master)](https://travis-ci.com/1QB-Information-Technologies/openqemist)
 
 Harnessing the combined power of emerging quantum computing technologies and
 state-of-the-art classical techniques, the Quantum-Enabled Molecular ab Initio
@@ -21,49 +21,17 @@ open source software under an Apache 2.0 license. For more information about the
 full functionality of QEMIST and to obtain additional information, please
 consult our main [product page](https://1qbit.com/qemist).
 
-## Installation
-### Installation with pip
-The simplest way to install the package is to use pip.
-
-`pip install openqemist`
-
-Before using the Microsoft Q# integration, follow the setup
-[instructions](https://docs.microsoft.com/en-us/quantum/install-guide/?view=qsharp-preview)
-for installing the .NET Core SDK and the Microsoft IQ# module.
-
-### Installation from source
-To install OpenQEMIST from source, simply clone the GitHub repo and add the package
-to your ``PYTHONPATH``. The dependencies for running the project are the Microsoft
-.NET Core SDK, IQ#, and qsharp packages as well as pyscf, numpy, and scipy. The
-most current list of dependencies, as well as dependencies for building the documentation
-can be found in the [Dockerfile](./docker_images/Dockerfile).
-
 ## Getting started
 
-To get started, install the package, then see the [Jupyter notebooks](./examples/)
+To get started, install the package, then see the [Jupyter notebooks](https://github.com/1QB-Information-Technologies/openqemist/tree/master/examples)
 for example usage.
 
-## Contents of the repository
+To use the Rigetti integration, see the [instructions here](http://docs.rigetti.com/en/stable/start.html)
+to install and configure the QVM and Quilc compiler. Alternatively, use the
+provided docker-compose file to set up the environment.
 
-Details the organization of this repository and the contents of each folder.
-
-- **benchmarks** :
-Long-running tests for the performance of algorithms on larger molecules
-
-- **docker_images** :
-The docker image that can be used to run the package.
-
-- **cont_integration** :
-Tools and script for continuous integration (versioning, automated testing, and updating documentation)
-
-- **docs** :
-Source code documentation and user documentation
-
-- **examples** :
-Examples and tutorials to learn how to use the different functionalities of the library
-
-- **openqemist** :
-The Python package
+To use the Microsoft QDK integration follow the [instructions here](https://docs.microsoft.com/en-us/quantum/install-guide/?view=qsharp-preview)
+to install the required dependencies.
 
 ## Architechture of OpenQEMIST
 OpenQEMIST is organized into three layers: problem decomposition, electronic

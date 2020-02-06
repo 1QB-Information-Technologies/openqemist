@@ -1,5 +1,5 @@
 #   Copyright 2019 1QBit
-#   
+#
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -37,6 +37,7 @@ def get_file_path_stub():
     import os
     cwd = os.getcwd()
     tests_root = cwd[0:cwd.find("tests") + 5]
+
     return tests_root + "/problem_decomposition/dmet/"
 
 class TestDMETloop(unittest.TestCase):

@@ -1,5 +1,5 @@
 #   Copyright 2019 1QBit
-#   
+#
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -25,7 +25,12 @@ H2 = """
    H 0.00 0.00 0.74137727
    """
 
-Be = """Be 0.0 0.0 0.0"""
+H4 = """
+    H   0.7071067811865476   0.0                 0.0
+    H   0.0                  0.7071067811865476  0.0
+    H  -1.0071067811865476   0.0                 0.0
+    H   0.0                 -1.0071067811865476  0.0
+"""
 
 class MockQuantumSolver(ParametricQuantumSolver):
     """ Class that mocks out the abstract ParametricQuantumSolver for testing.
@@ -38,10 +43,11 @@ class MockQuantumSolver(ParametricQuantumSolver):
     class Ansatze(Enum):
         UCCSD = 0
 
-    def __init__(self, molecule, anstatz, mean_field=None):
+    def __init__(self, ansatz, molecule, mean_field=None, backend_parameters={}):
         self.initial_wavefunction = None
         self.n_qubits = None
         self.amplitude_dimension = None
+        self.preferred_var_params = [0.]
 
     def simulate(self, amplitudes):
         return 3
@@ -49,17 +55,20 @@ class MockQuantumSolver(ParametricQuantumSolver):
     def get_rdm(self):
         pass
 
+    def default_initial_var_parameters(self):
+        pass
+
 class VQESolverTest(unittest.TestCase):
 
-    def test_be_no_mf_default_optimizer(self):
+    def test_mock(self):
         """ Test that the solver returns with the default optimizer from scipy.
 
         Since simlate is always returning the same number, this should force the
         optimizer to converge.
         """
         mol = gto.Mole()
-        mol.atom = Be
-        mol.basis = "3-21g"
+        mol.atom = H2
+        mol.basis = "sto-3g"
         mol.charge = 0
         mol.spin = 0
         mol.build()
@@ -70,8 +79,6 @@ class VQESolverTest(unittest.TestCase):
 
         energy = solver.simulate(mol)
 
-        # The converged energy value should be what the mock solver returned at
-        # the simulation call.
         self.assertEqual(energy, 3)
 
     def test_get_rdm_no_sim(self):
