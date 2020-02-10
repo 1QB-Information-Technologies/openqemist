@@ -38,6 +38,12 @@ to your ``PYTHONPATH``. The dependencies for running the project are the Microso
 most current list of dependencies, as well as dependencies for building the documentation
 can be found in the [Dockerfile](./docker_images/Dockerfile).
 
+## Rigetti stack configuration.
+Using the Rigetti integration requires setting up the Quilc and QVM. This can be
+done with the instructions [here](http://docs.rigetti.com/en/stable/start.html).
+The included [docker-compose file](./docker_images/docker-compose.yml) also
+configures the environment.
+
 ## Getting started
 
 To get started, install the package, then see the [Jupyter notebooks](./examples/)
