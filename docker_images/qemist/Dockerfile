@@ -47,7 +47,7 @@ WORKDIR /tmp/
 RUN dnf clean all
 RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc
 RUN wget -q -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/30/prod.repo
-RUN dnf install -y dotnet-sdk-3.0
+RUN dnf install -y dotnet-sdk-3.1
 
 # Install the IQSharp backend
 RUN dotnet tool install -g Microsoft.Quantum.IQSharp
