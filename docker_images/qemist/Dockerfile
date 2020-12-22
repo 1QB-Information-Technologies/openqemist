@@ -27,17 +27,17 @@ ENV LD_PRELOAD=/usr/lib64/libopenblas.so
 
 # Python modules for documentation, Jupyter notebook support, visualization
 # and some computational packages
-RUN pip3 install ipython jupyter 'pyscf==1.6' numpy 'scipy==1.2' pybind11 \
+RUN pip3 install ipython jupyter pyscf pybind11 \
     setuptools wheel sphinx py3Dmol sphinx_rtd_theme nbsphinx scikit-build
 
 
 ################### Google Openfermion + projectQ environment ###
-RUN pip3 install 'projectq==0.4'
-RUN pip3 install 'openfermion==0.10.0' openfermionprojectq
+RUN pip3 install projectq
+RUN pip3 install openfermion openfermionprojectq
 
 
 ################### IBM Qiskit environment ######################
-RUN pip3 install 'qiskit==0.13'
+RUN pip3 install qiskit
 
 
 ################### Microsoft QDK environment ###################
@@ -57,7 +57,7 @@ RUN /root/.dotnet/tools/dotnet-iqsharp install --user
 RUN pip3 install qsharp
 
 
-########################### Rigetti ##############################
+########################### Rigetti environment ##############################
 RUN pip3 install pyquil forestopenfermion
 
 ADD forest_config /root/.forest_config
