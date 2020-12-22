@@ -149,7 +149,7 @@ class QiskitParametricSolver(ParametricQuantumSolver):
         quantum_instance = QuantumInstance(backend=self.backend, shots=1000000)
         results = vqe.run(quantum_instance)
 
-        energy = results['eigvals'][0] + self.nuclear_repulsion_energy
+        energy = float(results['eigvals'][0] + self.nuclear_repulsion_energy)
 
         # Save the amplitudes so we have the optimal ones for RDM calculation
         self.optimized_amplitudes = var_params
