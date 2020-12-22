@@ -27,12 +27,13 @@ from itertools import product
 from qiskit import Aer
 
 # Lib from Qiskit Aqua and Chemistry
-from qiskit.aqua import Operator, QuantumInstance
+from qiskit.aqua import QuantumInstance #,Operator
 from qiskit.aqua.algorithms import VQE
+
 from qiskit.chemistry.qmolecule import QMolecule
 from qiskit.chemistry import FermionicOperator
-from qiskit.chemistry.aqua_extensions.components.variational_forms import UCCSD
-from qiskit.chemistry.aqua_extensions.components.initial_states import HartreeFock
+from qiskit.chemistry.components.variational_forms import UCCSD
+from qiskit.chemistry.components.initial_states import HartreeFock
 
 from ..parametric_quantum_solver import ParametricQuantumSolver
 
@@ -117,12 +118,11 @@ class QiskitParametricSolver(ParametricQuantumSolver):
         # ---------------------------------
 
         # Define initial state
-        self.init_state = HartreeFock(self.qubit_hamiltonian.num_qubits, self.num_spin_orbitals, self.num_particles,
+        self.init_state = HartreeFock(self.qubit_hamiltonian.num_qubits, self.num_particles,
                                  self.map_type, False)  # No qubit reduction
 
         # Select ansatz, set the dimension of the amplitudes
-        self.var_form = UCCSD(self.qubit_hamiltonian.num_qubits, depth=1,
-                         num_orbitals=self.num_spin_orbitals, num_particles=self.num_particles,
+        self.var_form = UCCSD(num_orbitals=self.qubit_hamiltonian.num_qubits, num_particles=self.num_particles, reps=1,
                          initial_state=self.init_state, qubit_mapping=self.map_type,
                          two_qubit_reduction=False, num_time_slices=1)
 

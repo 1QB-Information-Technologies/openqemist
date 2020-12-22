@@ -17,8 +17,8 @@ import numpy as np
 from pyscf import gto, scf, mp, ao2mo
 
 # Solve known issue with import triggered by Qiskit on MacOS
-import matplotlib
-matplotlib.use('TkAgg')
+#import matplotlib
+#matplotlib.use('TkAgg')
 
 from openqemist.quantum_solvers import QiskitParametricSolver
 
@@ -130,7 +130,7 @@ class QiskitParametricSolverParametricSolverTest(unittest.TestCase):
                                msg='Trace of two_rdm does not match n_elec * (n_elec-1)', delta=1e-6)
 
     #TODO: Check running time after QEM2-108 and move to benchmarks if needed
-    @unittest.skip("This test can take 20 mins")
+    @unittest.skip("This test can take 10-20 mins")
     def test_no_mf_H4(self):
         """ Tests number of var_params as well as simulate and get_RDM methods """
 
@@ -164,7 +164,7 @@ class QiskitParametricSolverParametricSolverTest(unittest.TestCase):
                                msg='Trace of two_rdm does not match n_elec * (n_elec-1)', delta=1e-6)
 
     #TODO: Check running time after QEM2-108 and move to benchmarks if needed
-    @unittest.skip("This test takes ~4h to perform")
+    @unittest.skip("This test takes ~2-4h to perform")
     def test_no_mf_LiH(self):
         """ Tests get_RDM methods: assume energy is correct and reconstruct from RDM """
 
