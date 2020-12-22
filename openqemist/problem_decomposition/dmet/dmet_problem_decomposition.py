@@ -25,6 +25,7 @@ from ..electron_localization import iao_localization
 
 from . import _helpers as helpers
 
+
 class DMETProblemDecomposition(ProblemDecomposition):
     """Employ DMET as a problem decomposition technique.
 
@@ -42,7 +43,7 @@ class DMETProblemDecomposition(ProblemDecomposition):
     """
 
     def __init__(self):
-        self.verbose = False
+        self.verbose = True
         self.electronic_structure_solver = CCSDSolver()
         self.electron_localization_method = iao_localization
 
@@ -90,17 +91,18 @@ class DMETProblemDecomposition(ProblemDecomposition):
             warnings.warn("DMET simulating with mean field not converged.", RuntimeWarning)
 
         # Construct orbital object
-        orbitals = helpers._orbitals(molecule, mean_field,
-                range(molecule.nao_nr()), self.electron_localization_method)
+        orbitals = helpers._orbitals(molecule, mean_field, range(molecule.nao_nr()), self.electron_localization_method)
 
         # TODO: remove last argument, combining fragments not supported
-        orb_list, orb_list2, atom_list2 = helpers._fragment_constructor(molecule,
-                fragment_atoms, 0)
+        orb_list, orb_list2, atom_list2 = helpers._fragment_constructor(molecule,fragment_atoms, 0)
 
         # Initialize the energy list and SCF procedure employing newton-raphson algorithm
         energy = []
         chemical_potential = 0.0
-        chemical_potential = scipy.optimize.newton(self._oneshot_loop, chemical_potential, args = (orbitals, orb_list, orb_list2, energy, fragment_solvers), tol=1e-5)
+        chemical_potential = scipy.optimize.newton(self._oneshot_loop, chemical_potential,
+                                                   args=(orbitals, orb_list, orb_list2, energy, fragment_solvers),
+                                                   tol=1e-3
+                                                   )
 
         # Get the final energy value
         niter = len(energy)
