@@ -101,7 +101,7 @@ class DMETProblemDecomposition(ProblemDecomposition):
         chemical_potential = 0.0
         chemical_potential = scipy.optimize.newton(self._oneshot_loop, chemical_potential,
                                                    args=(orbitals, orb_list, orb_list2, energy, fragment_solvers),
-                                                   tol=1e-3
+                                                   tol=1e-5
                                                    )
 
         # Get the final energy value
