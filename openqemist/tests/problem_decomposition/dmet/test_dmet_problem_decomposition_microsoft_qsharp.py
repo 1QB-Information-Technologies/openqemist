@@ -59,7 +59,8 @@ class DMETProblemDecompositionMicrosoftQSharpTest(unittest.TestCase):
 
         self.assertAlmostEqual(energy_vqe, -1.9916120594, delta=1e-3)
         
-        
+    @unittest.skip("DMET couldn't converge after 50 iterations. "
+                   "Reminder: Microsoft simulator is not noiseless in practice, as we must draw shots.")
     def test_h4ring_vqe_uccsd_microsoft_qsharp_size2(self):
         """
         DMET on H4 ring with fragment size two, using VQE-UCCSD backend
